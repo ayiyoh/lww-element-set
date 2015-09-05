@@ -86,7 +86,7 @@ public class HSet<E> implements GrowOnlySet<E> {
 
 	@Override
 	public ArrayList<E> get() {
-		return null;
+		return new ArrayList<E>(data.keySet());
 	}
 
 	@Override
