@@ -4,34 +4,40 @@ import java.util.*;
 import java.lang.reflect.*;
 
 import redis.clients.jedis.*;
-import redis.clients.jedis.exceptions.JedisConnectionException;
 import static redis.clients.jedis.ScanParams.SCAN_POINTER_START;
 
 public class RedisZSet<E, T extends Comparable<T>> implements GrowOnlySet<E, T> {
 	
 	private static Jedis jedis;
-	private static JedisPool jedisPool;
 	private String type;
 	private long count;
 	private Class<E> dataClass;
+	
+	public RedisZSet() {
+		
+	}
 	
 	public RedisZSet(String type, Class<E> dataClass) {
 		init(type, dataClass);
 	}
 	
+	/**
+	 * create a JedisPool to get a Jedis resource.
+	 * 
+	 * @param type This string is used as a key in Redis.
+	 * @param dataClass Class of E. It needs to be specified for casting.
+	 */
 	public void init(String type, Class<E> dataClass) {
 		this.type = type;
 		this.dataClass = dataClass;
-		if (jedisPool == null)
-		{
-			try {
-				jedisPool = new JedisPool(new JedisPoolConfig(), "localhost");
-				jedis = jedisPool.getResource();
-				count = jedis.zcount(type, Double.MIN_VALUE, Double.MAX_VALUE);
-			} catch (JedisConnectionException e) {
-				e.printStackTrace();
-			}
-		}
+	}
+	
+	public static void setJedis(Jedis jedis) {
+		RedisZSet.jedis = jedis;
+	}
+
+	public static Jedis getJedis() {
+		return jedis;
 	}
 	
 	/**
@@ -56,6 +62,12 @@ public class RedisZSet<E, T extends Comparable<T>> implements GrowOnlySet<E, T> 
 		
 	}
 
+	/**
+	 * Uses zscore to check if the element exists.
+	 * 
+	 * @param element The interested element 
+	 * @return True if the element exists in the set.
+	 */
 	@Override
 	public boolean exists(E element) {
 		// TODO: hack hack --- used zscore to see if the value exists
@@ -68,7 +80,7 @@ public class RedisZSet<E, T extends Comparable<T>> implements GrowOnlySet<E, T> 
 	 * <p>Because the values returned are strings, to support other data types (int, double, etc.),
 	 * the class of E is used to dynamically cast the string --- using Method.invoke(Object obj, Object[] args) </p>   
 	 * 
-	 * @return ArrayList<E> --- An array list of elements in the set.
+	 * @return ArrayList --- An array list of elements in the set.
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
@@ -101,7 +113,7 @@ public class RedisZSet<E, T extends Comparable<T>> implements GrowOnlySet<E, T> 
 	 * 
 	 * Casting using the the Method.invoke(Object obj, Object[] args) is used to support other data types.
 	 * 
-	 * @return Iterator<E>
+	 * @return Iterator
 	 */
 	@Override
 	public Iterator<E> iterator() {
@@ -110,7 +122,6 @@ public class RedisZSet<E, T extends Comparable<T>> implements GrowOnlySet<E, T> 
 
 			@Override
 			public boolean hasNext() {
-				System.out.println("Count: " + count + " currentIndex: " + currentIndex);
 				return count > 0 && currentIndex < count;
 			}
 
@@ -141,6 +152,13 @@ public class RedisZSet<E, T extends Comparable<T>> implements GrowOnlySet<E, T> 
 		return iter;
 	}
 
+	/**
+	 * Uses zscore to get the timestamp. If the element doesn't exist,
+	 * return null.
+	 *  
+	 * @param element --- The element
+	 * @return T --- The timestamp of the element
+	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public T getTimestampForElement(E element) {
@@ -151,7 +169,7 @@ public class RedisZSet<E, T extends Comparable<T>> implements GrowOnlySet<E, T> 
 		return null;
 	}
 	
-		@Override
+	@Override
 	public String toString()
 	{
 		StringBuilder sb = new StringBuilder();

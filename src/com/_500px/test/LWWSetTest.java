@@ -5,11 +5,26 @@ import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+
+import redis.clients.jedis.Jedis;
 
 import com._500px.lww.*;
 
 public class LWWSetTest {
+
+	@Before
+	public void init() {
+		Jedis jedis = JedisFactory.getInstance().getJedisPool().getResource();
+		RedisZSet.setJedis(jedis);
+	}
+
+	@After
+	public void clean() {
+		JedisFactory.getInstance().returnResource(RedisZSet.getJedis());
+	}
 
 	@Test
 	public void testLWWSet() {
@@ -83,7 +98,6 @@ public class LWWSetTest {
 		// remove 12
 		set.remove(12, 13l);
 		list.remove(2);
-		System.out.println(set.toString());
 		Collections.sort(list);
 		ArrayList<Integer> listFromHSet = set.get();
 		Collections.sort(listFromHSet);
@@ -104,8 +118,8 @@ public class LWWSetTest {
 		Collections.sort(list2);
 		ArrayList<Integer> listFromZSet = newSet.get();
 		Collections.sort(listFromZSet);
-		System.out.println(newSet.toString());
 		assertArrayEquals(list2.toArray(), listFromZSet.toArray());
 	}
+
 	
 }

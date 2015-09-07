@@ -5,12 +5,30 @@ import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+
+import com._500px.lww.JedisFactory;
 import com._500px.lww.RedisZSet;
 
 public class RedisZSetTest {
 
+	@Before
+	public void init() {
+		JedisPool jedisPool = JedisFactory.getInstance().getJedisPool();
+		if (jedisPool == null)
+		{
+			System.out.println("System Pool is null!");
+		}
+		Jedis jedis = jedisPool.getResource();
+		RedisZSet.setJedis(jedis);
+	}
+
+	
 	@Test
 	public void testRedisZSet() {
 		RedisZSet<Integer, Double> zset = new RedisZSet<Integer, Double>("add", Integer.class);
@@ -57,6 +75,11 @@ public class RedisZSetTest {
 		assertEquals(Double.valueOf(5d), zset.getTimestampForElement(20));
 		zset.add(20, 8d);
 		assertEquals(Double.valueOf(8d), zset.getTimestampForElement(20));
+	}
+
+	@After
+	public void clean() {
+		JedisFactory.getInstance().returnResource(RedisZSet.getJedis());
 	}
 
 }
