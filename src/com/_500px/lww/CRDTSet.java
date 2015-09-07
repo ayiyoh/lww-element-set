@@ -7,7 +7,6 @@ package com._500px.lww;
  *
  * @param <E>
  */
-public interface CRDTSet<E> extends CRDT<E> {
-	public void remove(E element, long timestamp);
-	public void remove(E element);
+public interface CRDTSet<E, T extends Comparable<T>> extends CRDT<E, T> {
+	public void remove(E element, T timestamp);
 }

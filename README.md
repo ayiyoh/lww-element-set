@@ -1,1 +1,2 @@
 # lww-element-set
+A simple LWW element set. The underlying set can be either HSet (HashMap implementation) or RedisZSet (Redis's ZSet implementation). Jedis is used as a Redis client and JUnit is used for testing.

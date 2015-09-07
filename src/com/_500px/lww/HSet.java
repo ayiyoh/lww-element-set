@@ -10,36 +10,25 @@ import java.util.*;
  * @param <E>
  */
 
-public class HSet<E> implements GrowOnlySet<E> {
+public class HSet<E, T extends Comparable<T>> implements GrowOnlySet<E, T> {
 
-	private Map<E, Long> data;
+	private Map<E, T> data;
 	
 	public HSet() {
-		data = new HashMap<E, Long>();
+		data = new HashMap<E, T>();
 	}
 
-	public HSet(Map<E, Long> data) {
+	public HSet(Map<E, T> data) {
 		this.data = data;
 	}
 
-	public Map<E, Long> getData() {
+	public Map<E, T> getData() {
 		return data;
 	}
 
-	public void setData(Map<E, Long> data) {
+	public void setData(Map<E, T> data) {
 		this.data = data;
 	} 
-	
-	/**
-	 * Add an element with the current timestamp in the system.
-	 * 
-	 * @param element an element to be added into the set
-	 */
-
-	@Override
-	public void add(E element) {
-		add(element, System.currentTimeMillis());
-	}
 	
 	/**
 	 *	Add an element with a specified timestamp. 
@@ -52,15 +41,15 @@ public class HSet<E> implements GrowOnlySet<E> {
 	 *  simply puts it into the hash map.
 	 *  
 	 * @param element       an element to be added into the set
-	 * @param timestamp     the UNIX timestamp in long 
+	 * @param timestamp     the timestamp 
 	 */
 	@Override
-	public void add(E element, long timestamp) {
+	public void add(E element, T timestamp) {
 		// if there is the same element
 		if (data.containsKey(element)) {
-			long existingTimestamp = data.get(element);
+			T existingTimestamp = data.get(element);
 			// we only add the element with more recent element
-			if (existingTimestamp < timestamp) {
+			if (existingTimestamp.compareTo(timestamp) < 0) {
 				data.put(element, timestamp);
 			}
 		}
@@ -76,12 +65,12 @@ public class HSet<E> implements GrowOnlySet<E> {
 	}
 
 	@Override
-	public long getTimestampForElement(E element) {
+	public T getTimestampForElement(E element) {
 		if (exists(element))
 		{
 			return data.get(element);
 		}
-		return -1l;
+		return null;
 	}
 
 	@Override
@@ -93,7 +82,7 @@ public class HSet<E> implements GrowOnlySet<E> {
 	public Iterator<E> iterator() {
 		Iterator<E> iter = new Iterator<E> () {
 
-			Iterator<Map.Entry<E, Long>> mapiter = data.entrySet().iterator();
+			Iterator<Map.Entry<E, T>> mapiter = data.entrySet().iterator();
 
 			@Override
 			public boolean hasNext() {
@@ -102,7 +91,7 @@ public class HSet<E> implements GrowOnlySet<E> {
 
 			@Override
 			public E next() {
-				Map.Entry<E, Long> entry = mapiter.next();
+				Map.Entry<E, T> entry = mapiter.next();
 				return entry.getKey();
 			}
 
@@ -120,7 +109,7 @@ public class HSet<E> implements GrowOnlySet<E> {
 		StringBuilder sb = new StringBuilder();
 		for (E element : data.keySet())
 		{
-			long timestamp = data.get(element);
+			T timestamp = data.get(element);
 			sb.append("val: ")
 			  .append(element)
 			  .append(" timestamp: ")

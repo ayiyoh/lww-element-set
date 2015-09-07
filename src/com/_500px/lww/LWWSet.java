@@ -9,12 +9,12 @@ import java.util.*;
  * @param <E>
  */
 
-public class LWWSet<E> implements CRDTSet<E> {
+public class LWWSet<E, T extends Comparable<T>> implements CRDTSet<E, T> {
 	
 	public enum BiaseType {ADD, REMOVE}
 	
-	private GrowOnlySet<E> addSet;
-	private GrowOnlySet<E> removeSet;
+	private GrowOnlySet<E, T> addSet;
+	private GrowOnlySet<E, T> removeSet;
 	
 	private final BiaseType biaseType;
 	
@@ -23,41 +23,38 @@ public class LWWSet<E> implements CRDTSet<E> {
 	}
 
 	public LWWSet(BiaseType biaseType) {
-		addSet = new HSet<E>();
-		removeSet = new HSet<E>();
+		addSet = new HSet<E, T>();
+		removeSet = new HSet<E, T>();
 		this.biaseType = biaseType;
 	}
+	
+	public LWWSet(BiaseType biaseType, GrowOnlySet<E, T> addSet, GrowOnlySet<E, T> removeSet)
+	{
+		this.biaseType = biaseType;
+		this.addSet = addSet;
+		this.removeSet = removeSet;
+	}
 
-	public GrowOnlySet<E> getAddSet() {
+	public GrowOnlySet<E, T> getAddSet() {
 		return addSet;
 	}
-	public void setAddSet(GrowOnlySet<E> addSet) {
+	public void setAddSet(GrowOnlySet<E, T> addSet) {
 		this.addSet = addSet;
 	}
-	public GrowOnlySet<E> getRemoveSet() {
+	public GrowOnlySet<E, T> getRemoveSet() {
 		return removeSet;
 	}
-	public void setRemoveSet(GrowOnlySet<E> removeSet) {
+	public void setRemoveSet(GrowOnlySet<E, T> removeSet) {
 		this.removeSet = removeSet;
 	}
 
 	@Override
-	public void add(E element) {
-		addSet.add(element, System.currentTimeMillis());
-	}
-	
-	@Override
-	public void add(E element, long timestamp) {
+	public void add(E element, T timestamp) {
 		addSet.add(element, timestamp);
 	}
 	
-	@Override 
-	public void remove(E element) {
-		removeSet.add(element, System.currentTimeMillis());
-	}
-	
 	@Override
-	public void remove(E element, long timestamp)
+	public void remove(E element, T timestamp)
 	{
 		removeSet.add(element, timestamp);
 	}
@@ -70,70 +67,37 @@ public class LWWSet<E> implements CRDTSet<E> {
 	
 	@Override
 	public boolean exists(E element) {
-		long [] typedTimestamp = getTypedTimestampForElement(element);
-		if (typedTimestamp[0] == 1 && typedTimestamp[1] != -1l)
-			return true;
-		return false;
-	}
-	
-	/**
-	 * Returns the more recent timestamp for the element, either 
-	 * in the add set or remove set
-	 */
-	@Override
-	public long getTimestampForElement(E element) {
-		return getTypedTimestampForElement(element)[1];
-	}
-	
-	/**
-	 * This is a helper function which returns an array of longs, in which 
-	 * [1, t] (t != -1) means the element with timestamp t either
-	 * exists in the add set only or the element exists in both sets
-	 * but the one in the add set is more recent, and [-1, t] (t != -1)
-	 * means the element with timestamp t either exists in the remove set only
-	 * or the one in the remove set is more recent.
-	 * <p>
-	 * When t = -1, it means the element doesn't exist in both of the sets.
-	 * <p>
-	 * The phrase "more recent" when the timestamps in the add set and remove 
-	 * set are equal for the same element has different meanings for different 
-	 * biase type:
-	 * <br>
-	 * 1. When biase type is ADD, the element in the add set is taken 
-	 * 2. When biase type is REMOVE, the element in the remove set is taken
-	 * 
-	 * @param element 
-	 */
-	private long[] getTypedTimestampForElement(E element)
-	{
-		long[] typedTimestamp = new long[2];
-		long addTime = addSet.getTimestampForElement(element);
-		long removeTime = removeSet.getTimestampForElement(element);
-		typedTimestamp[1] = -1l;
+		T addTime = addSet.getTimestampForElement(element);
+		T removeTime = removeSet.getTimestampForElement(element);
+		// element does not exist in add set
+		if (!addSet.exists(element))
+		{
+			return false;
+		}
+		else {
+			// exists in add set but not in remove set
+			if (!removeSet.exists(element))
+				return true;
+		}
 		if (biaseType == BiaseType.ADD) {
-			if (removeTime > addTime) {
-				typedTimestamp[0] = -1l;
-				typedTimestamp[1] = removeTime;
+			if (removeTime.compareTo(addTime) > 0) {
+				return false;
 			} 
 			else {
-				typedTimestamp[0] = 1l;
-				typedTimestamp[1] = addTime;
+				return true;
 			}
 		}
 		else {
-			if (addTime > removeTime)
+			if (addTime.compareTo(removeTime) > 0)
 			{
-				typedTimestamp[0] = 1l;
-				typedTimestamp[1] = addTime;
+				return true;
 			}
 			else {
-				typedTimestamp[0] = -1l;
-				typedTimestamp[1] = removeTime;
+				return false;
 			}
 		}	
-		return typedTimestamp;
 	}
-
+	
 	/**
 	 * This function returns all 'live' elements as an ArrayList,
 	 * i.e., the elements in add set without also being in the 
@@ -149,11 +113,11 @@ public class LWWSet<E> implements CRDTSet<E> {
 
 		for (E element : addSet)
 		{
-			long addTimestamp = addSet.getTimestampForElement(element);
+			T addTimestamp = addSet.getTimestampForElement(element);
 			if (removeSet.exists(element))
 			{
-				long removeTime = removeSet.getTimestampForElement(element);
-				if (removeTime < addTimestamp || (removeTime == addTimestamp && biaseType == BiaseType.ADD))
+				T removeTime = removeSet.getTimestampForElement(element);
+				if (removeTime.compareTo(addTimestamp) < 0 || (removeTime.compareTo(addTimestamp) == 0 && biaseType == BiaseType.ADD))
 					result.add(element);
 			}
 			else {

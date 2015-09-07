@@ -7,10 +7,8 @@ import java.util.ArrayList;
  *
  * @param <E>
  */
-public interface CRDT<E> {
-	public void add(E element, long timestamp);
-	public void add(E element);
+public interface CRDT<E, T extends Comparable<T>> {
+	public void add(E element, T timestamp);
 	public boolean exists(E element);
-	public long getTimestampForElement(E element);
 	public ArrayList<E> get();
 }

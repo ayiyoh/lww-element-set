@@ -17,6 +17,7 @@ public class JedisTest {
 
 		// get the score:
 		assertEquals(Double.valueOf(10.0), jedis.zscore(key, "hello"));
+		assertEquals(Double.valueOf(45.0), jedis.zscore("add", "20"));
 	}
 
 }
