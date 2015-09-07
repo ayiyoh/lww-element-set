@@ -1,6 +1,6 @@
 package com._500px.lww;
 /**
- * A jedis factory
+ * A jedis factory maintaining the Jedis resources.
  * 
  * @author Yuefei Zhu
  */

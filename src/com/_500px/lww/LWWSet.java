@@ -5,8 +5,9 @@ import java.util.*;
  * A class implements last writer wins (LWW) element set CRDT
  * 
  * @author Yuefei Zhu
- *
- * @param <E>
+ * 
+ * @param E The type of elements maintained by the CRDTSet
+ * @param T The type of timestamp of the element
  */
 
 public class LWWSet<E, T extends Comparable<T>> implements CRDTSet<E, T> {
@@ -62,7 +63,14 @@ public class LWWSet<E, T extends Comparable<T>> implements CRDTSet<E, T> {
 	/**
 	 * Checks if the element exists in the LWW set.
 	 * 
-	 * @param element
+	 * Returns true if:
+	 * 1. The element is in the add set but not in the remove set.
+	 * 2. The element is both in the add set and remove set, but has 
+	 *    a larger timestamp. 
+	 * 3. The biase type is ADD and the element is both in the add set and remove set, with the 
+	 *    same timestamp.
+	 * 
+	 * @param element The interested element
 	 */
 	
 	@Override

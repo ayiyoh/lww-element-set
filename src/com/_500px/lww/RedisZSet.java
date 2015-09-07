@@ -5,6 +5,15 @@ import java.lang.reflect.*;
 
 import redis.clients.jedis.*;
 import static redis.clients.jedis.ScanParams.SCAN_POINTER_START;
+/**
+ * 
+ * A class using Redis's zset to mimic the HSet.
+ * 
+ * @author yzhu
+ * 
+ * @param E The type of elements maintained by the CRDTSet
+ * @param T The type of timestamp of the element
+ */
 
 public class RedisZSet<E, T extends Comparable<T>> implements GrowOnlySet<E, T> {
 	
@@ -42,8 +51,8 @@ public class RedisZSet<E, T extends Comparable<T>> implements GrowOnlySet<E, T> 
 	
 	/**
 	 * 
-	 * @param element --- the element to be added.
-	 * @param timestamp --- timestamp of the element.
+	 * @param element The element to be added.
+	 * @param timestamp Timestamp of the element.
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
@@ -80,7 +89,7 @@ public class RedisZSet<E, T extends Comparable<T>> implements GrowOnlySet<E, T> 
 	 * <p>Because the values returned are strings, to support other data types (int, double, etc.),
 	 * the class of E is used to dynamically cast the string --- using Method.invoke(Object obj, Object[] args) </p>   
 	 * 
-	 * @return ArrayList --- An array list of elements in the set.
+	 * @return An array list of elements in the set.
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
@@ -156,8 +165,8 @@ public class RedisZSet<E, T extends Comparable<T>> implements GrowOnlySet<E, T> 
 	 * Uses zscore to get the timestamp. If the element doesn't exist,
 	 * return null.
 	 *  
-	 * @param element --- The element
-	 * @return T --- The timestamp of the element
+	 * @param element The element
+	 * @return The timestamp of the element
 	 */
 	@SuppressWarnings("unchecked")
 	@Override

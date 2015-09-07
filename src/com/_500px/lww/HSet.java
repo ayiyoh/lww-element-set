@@ -5,9 +5,9 @@ import java.util.*;
 /**
  * A class implements the base set for LWW element set. 
  * @author Yuefei Zhu
- * @version 0.1.0
  * @since 2015-09-04
- * @param <E>
+ * @param E The type of elements maintained by the CRDTSet
+ * @param T The type of timestamp of the element
  */
 
 public class HSet<E, T extends Comparable<T>> implements GrowOnlySet<E, T> {
